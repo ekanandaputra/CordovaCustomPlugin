@@ -108,8 +108,6 @@ public class CordovaCustomPlugin extends CordovaPlugin {
 
                 String yourRealPath = getPath(cordova.getContext(), selectedVideoUri);
                 executeCompressCommand(yourRealPath, callbackContext);
-
-                callbackContext.success(yourRealPath);
             } else {
                 callbackContext.error("Failed to pick video");
             }
@@ -214,10 +212,10 @@ public class CordovaCustomPlugin extends CordovaPlugin {
         Log.d("TAG", "startTrim: dest: " + dest.getAbsolutePath());
         String filePath = dest.getAbsolutePath();
         String[] complexCommand = {"-y", "-i", yourRealPath, "-s", "480x360", "-r", "25", "-vcodec", "mpeg4", "-b:v", "150k", "-b:a", "48000", "-ac", "2", "-ar", "22050", filePath};
-        execFFmpegBinary(complexCommand, callbackContext);
+        execFFmpegBinary(complexCommand, callbackContext, filePath);
     }
 
-    private void execFFmpegBinary(final String[] command, final CallbackContext callbackContext) {
+    private void execFFmpegBinary(final String[] command, final CallbackContext callbackContext, final String filePath) {
         Config.enableLogCallback(new LogCallback() {
             @Override
             public void apply(LogMessage message) {
@@ -237,7 +235,12 @@ public class CordovaCustomPlugin extends CordovaPlugin {
         long executionId = FFmpeg.executeAsync(command, (executionId1, returnCode) -> {
             if (returnCode == Config.RETURN_CODE_SUCCESS) {
                 Log.d("TAG", "Finished command : ffmpeg " + Arrays.toString(command));
-                callbackContext.success("Compression successful. File path: " + command[command.length - 1]);
+                String base64String = convertFileToBase64(filePath);
+                if (base64String != null) {
+                    callbackContext.success(base64String);
+                } else {
+                    callbackContext.error("Failed to convert video to Base64.");
+                }
             } else if (returnCode == Config.RETURN_CODE_CANCEL) {
                 Log.e("TAG", "Async command execution cancelled by user.");
                 callbackContext.error("Compression cancelled.");
@@ -247,6 +250,21 @@ public class CordovaCustomPlugin extends CordovaPlugin {
             }
         });
         Log.e("TAG", "execFFmpegMergeVideo executionId-" + executionId);
+    }
+
+        private String convertFileToBase64(String filePath) {
+        try {
+            File file = new File(filePath);
+            FileInputStream fileInputStream = new FileInputStream(file);
+            byte[] bytes = new byte[(int) file.length()];
+            fileInputStream.read(bytes);
+            fileInputStream.close();
+            String base64 = Base64.encodeToString(bytes, Base64.DEFAULT);
+            return "data:video/mp4;base64," + base64;
+        } catch (IOException e) {
+            Log.e("TAG", "Error converting file to Base64", e);
+            return null;
+        }
     }
 
 }
