@@ -260,7 +260,7 @@ public class CordovaCustomPlugin extends CordovaPlugin {
             fileInputStream.read(bytes);
             fileInputStream.close();
             String base64 = Base64.encodeToString(bytes, Base64.DEFAULT);
-            return "data:video/mp4;base64," + base64;
+            return base64;
         } catch (IOException e) {
             Log.e("TAG", "Error converting file to Base64", e);
             return null;
