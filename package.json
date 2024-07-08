@@ -1,0 +1,17 @@
+{
+  "name": "ntech.custom.plugin",
+  "version": "1.0.0",
+  "description": "",
+  "cordova": {
+    "id": "ntech.custom.plugin",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "ecosystem:cordova",
+    "cordova-android"
+  ],
+  "author": "",
+  "license": "ISC"
+}
