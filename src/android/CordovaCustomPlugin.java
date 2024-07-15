@@ -76,6 +76,18 @@ public class CordovaCustomPlugin extends CordovaPlugin {
             return true;
         }
 
+        if (action.equals("compressVideo")) {
+            String uriString = args.getString(0);
+            String width = args.getString(1);
+            String height = args.getString(2);
+
+            Uri contentUri = Uri.parse(uriString);
+            String yourRealPath = getPath(cordova.getContext(), contentUri);
+            executeCompressCommand(yourRealPath, callbackContext);
+            this.callbackContext = callbackContext;
+            return true;
+        }
+
         return false;
         
     }
@@ -102,10 +114,6 @@ public class CordovaCustomPlugin extends CordovaPlugin {
         if (requestCode == PICK_VIDEO_REQUEST && resultCode == Activity.RESULT_OK) {
             Uri selectedVideoUri = intent.getData();
             if (selectedVideoUri != null) {
-                // Uri fileUri = Uri.parse(fileUriString);
-                // File file = new File(fileUri.getPath());
-                // String fullPath = file.getAbsolutePath();
-
                 String yourRealPath = getPath(cordova.getContext(), selectedVideoUri);
                 executeCompressCommand(yourRealPath, callbackContext);
             } else {
