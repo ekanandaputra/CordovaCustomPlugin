@@ -80,9 +80,10 @@ public class CordovaCustomPlugin extends CordovaPlugin {
             String uriString = args.getString(0);
             String width = args.getString(1);
             String height = args.getString(2);
-
-            Uri contentUri = Uri.parse(uriString);
-            String yourRealPath = getPath(cordova.getContext(), contentUri);
+            
+            Uri fileUri = Uri.parse("file://" + uriString);
+            
+            String yourRealPath = getPath(cordova.getContext(), fileUri);
             executeCompressCommand(yourRealPath, callbackContext);
             this.callbackContext = callbackContext;
             return true;
