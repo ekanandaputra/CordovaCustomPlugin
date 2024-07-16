@@ -55,11 +55,14 @@ import com.arthenica.mobileffmpeg.StatisticsCallback;
  */
 public class CordovaCustomPlugin extends CordovaPlugin {
 
-   private static final int PICK_VIDEO_REQUEST = 1;
+    private static final int PICK_VIDEO_REQUEST = 1;
     private CallbackContext callbackContext;
-  private static final String TAG = "YourPlugin";
+    private static final String TAG = "YourPlugin";
     private static final String FFMPEG_BINARY = "ffmpeg";
     private static final String FFMPEG_DIR = "ffmpeg"; // Path relative to plugin
+
+    String compressedWidth = "854";
+    String compressedHeight = "480";
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
@@ -71,6 +74,9 @@ public class CordovaCustomPlugin extends CordovaPlugin {
         }
 
         if (action.equals("pickVideo")) {
+            compressedWidth = args.getString(0);
+            compressedHeight = args.getString(1);
+            
             pickVideo();
             this.callbackContext = callbackContext;
             return true;
@@ -78,12 +84,12 @@ public class CordovaCustomPlugin extends CordovaPlugin {
 
         if (action.equals("compressVideo")) {
             String uriString = args.getString(0);
-            String width = args.getString(1);
-            String height = args.getString(2);
-            
-            Uri fileUri = Uri.parse("file://" + uriString);
-            
-            String yourRealPath = getPath(cordova.getContext(), fileUri);
+            compressedWidth = args.getString(1);
+            compressedHeight = args.getString(2);
+
+            Uri contentUri = Uri.parse("file://" + uriString);
+
+            String yourRealPath = getPath(cordova.getContext(), contentUri);
             executeCompressCommand(yourRealPath, callbackContext);
             this.callbackContext = callbackContext;
             return true;
@@ -220,7 +226,7 @@ public class CordovaCustomPlugin extends CordovaPlugin {
         Log.d("TAG", "startTrim: src: " + yourRealPath);
         Log.d("TAG", "startTrim: dest: " + dest.getAbsolutePath());
         String filePath = dest.getAbsolutePath();
-        String[] complexCommand = {"-y", "-i", yourRealPath, "-s", "480x360", "-r", "25", "-vcodec", "mpeg4", "-b:v", "150k", "-b:a", "48000", "-ac", "2", "-ar", "22050", filePath};
+        String[] complexCommand = {"-y", "-i", yourRealPath, "-s", compressedWidth+"x"+compressedHeight, "-r", "25", "-b:v", "150k", "-b:a", "48000", "-ac", "2", "-ar", "22050", filePath};
         execFFmpegBinary(complexCommand, callbackContext, filePath);
     }
 
@@ -269,6 +275,7 @@ public class CordovaCustomPlugin extends CordovaPlugin {
             fileInputStream.read(bytes);
             fileInputStream.close();
             String base64 = Base64.encodeToString(bytes, Base64.DEFAULT);
+            Log.d("TAG", "base64 result " + base64);
             return base64;
         } catch (IOException e) {
             Log.e("TAG", "Error converting file to Base64", e);
