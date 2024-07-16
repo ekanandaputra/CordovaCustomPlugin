@@ -63,6 +63,7 @@ public class CordovaCustomPlugin extends CordovaPlugin {
 
     String compressedWidth = "854";
     String compressedHeight = "480";
+    String encoder = "libx264";
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
@@ -76,7 +77,8 @@ public class CordovaCustomPlugin extends CordovaPlugin {
         if (action.equals("pickVideo")) {
             compressedWidth = args.getString(0);
             compressedHeight = args.getString(1);
-            
+            encoder = args.getString(2);
+
             pickVideo();
             this.callbackContext = callbackContext;
             return true;
@@ -86,6 +88,7 @@ public class CordovaCustomPlugin extends CordovaPlugin {
             String uriString = args.getString(0);
             compressedWidth = args.getString(1);
             compressedHeight = args.getString(2);
+            encoder = args.getString(3);
 
             Uri contentUri = Uri.parse("file://" + uriString);
 
@@ -226,7 +229,7 @@ public class CordovaCustomPlugin extends CordovaPlugin {
         Log.d("TAG", "startTrim: src: " + yourRealPath);
         Log.d("TAG", "startTrim: dest: " + dest.getAbsolutePath());
         String filePath = dest.getAbsolutePath();
-        String[] complexCommand = {"-y", "-i", yourRealPath, "-s", compressedWidth+"x"+compressedHeight, "-r", "25", "-b:v", "150k", "-b:a", "48000", "-ac", "2", "-ar", "22050", filePath};
+        String[] complexCommand = {"-y", "-i", yourRealPath, "-s", compressedWidth+"x"+compressedHeight, "-r", "25", "-vcodec", encoder, "-b:v", "150k", "-b:a", "48000", "-ac", "2", "-ar", "22050", filePath};
         execFFmpegBinary(complexCommand, callbackContext, filePath);
     }
 
