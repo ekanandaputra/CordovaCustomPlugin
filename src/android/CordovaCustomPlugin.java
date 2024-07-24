@@ -49,6 +49,8 @@ import com.arthenica.mobileffmpeg.LogMessage;
 import com.arthenica.mobileffmpeg.Statistics;
 import com.arthenica.mobileffmpeg.StatisticsCallback;
 
+import android.media.MediaMetadataRetriever;
+
 
 /**
  * This class echoes a string called from JavaScript.
@@ -64,6 +66,9 @@ public class CordovaCustomPlugin extends CordovaPlugin {
     String compressedWidth = "854";
     String compressedHeight = "480";
     String encoder = "libx264";
+    int orientation = 0;
+    String newResolution = compressedWidth+"x"+compressedHeight;
+    String compressionLevel = "20";
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
@@ -78,6 +83,7 @@ public class CordovaCustomPlugin extends CordovaPlugin {
             compressedWidth = args.getString(0);
             compressedHeight = args.getString(1);
             encoder = args.getString(2);
+            compressionLevel = args.getString(3);
 
             pickVideo();
             this.callbackContext = callbackContext;
@@ -89,8 +95,10 @@ public class CordovaCustomPlugin extends CordovaPlugin {
             compressedWidth = args.getString(1);
             compressedHeight = args.getString(2);
             encoder = args.getString(3);
+            compressionLevel = args.getString(4);
 
             Uri contentUri = Uri.parse("file://" + uriString);
+            orientation = getVideoOrientation(contentUri);
 
             String yourRealPath = getPath(cordova.getContext(), contentUri);
             executeCompressCommand(yourRealPath, callbackContext);
@@ -124,6 +132,7 @@ public class CordovaCustomPlugin extends CordovaPlugin {
         if (requestCode == PICK_VIDEO_REQUEST && resultCode == Activity.RESULT_OK) {
             Uri selectedVideoUri = intent.getData();
             if (selectedVideoUri != null) {
+                orientation = getVideoOrientation(selectedVideoUri);
                 String yourRealPath = getPath(cordova.getContext(), selectedVideoUri);
                 executeCompressCommand(yourRealPath, callbackContext);
             } else {
@@ -229,7 +238,16 @@ public class CordovaCustomPlugin extends CordovaPlugin {
         Log.d("TAG", "startTrim: src: " + yourRealPath);
         Log.d("TAG", "startTrim: dest: " + dest.getAbsolutePath());
         String filePath = dest.getAbsolutePath();
-        String[] complexCommand = {"-y", "-i", yourRealPath, "-s", compressedWidth+"x"+compressedHeight, "-r", "25", "-vcodec", encoder, "-b:v", "150k", "-b:a", "48000", "-ac", "2", "-ar", "22050", filePath};
+
+        Log.d("TAG", "ORIENTATION" + orientation);
+        if (orientation == 0 || orientation == 180) {
+            newResolution = compressedWidth+"x"+compressedHeight;
+        }
+        else if (orientation == 90 || orientation == 270) {
+            newResolution = compressedHeight+"x"+compressedWidth;
+        }
+
+        String[] complexCommand = {"-y", "-i", yourRealPath, "-s", newResolution, "-r", "25", "-vcodec", encoder, "-b:v", "150k", "-b:a", "48000", "-ac", "2", "-ar", "22050", "-crf", compressionLevel, filePath};
         execFFmpegBinary(complexCommand, callbackContext, filePath);
     }
 
@@ -270,7 +288,7 @@ public class CordovaCustomPlugin extends CordovaPlugin {
         Log.e("TAG", "execFFmpegMergeVideo executionId-" + executionId);
     }
 
-        private String convertFileToBase64(String filePath) {
+    private String convertFileToBase64(String filePath) {
         try {
             File file = new File(filePath);
             FileInputStream fileInputStream = new FileInputStream(file);
@@ -283,6 +301,26 @@ public class CordovaCustomPlugin extends CordovaPlugin {
         } catch (IOException e) {
             Log.e("TAG", "Error converting file to Base64", e);
             return null;
+        }
+    }
+
+    private int getVideoOrientation(Uri videoUri) {
+        Context context = this.cordova.getActivity().getApplicationContext();
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+            retriever.setDataSource(context, videoUri);
+            String orientation = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
+            int videoOrientation = Integer.parseInt(orientation);
+            return videoOrientation;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
+        } finally {
+             try {
+                retriever.release();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
